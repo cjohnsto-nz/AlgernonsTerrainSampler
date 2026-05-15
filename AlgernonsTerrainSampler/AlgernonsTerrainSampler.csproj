@@ -1,0 +1,124 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <OutputPath>bin\$(Configuration)\Mods\mod</OutputPath>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DebugType>full</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+    <ExcludeGeneratedDebugSymbol>false</ExcludeGeneratedDebugSymbol>
+    <NoWarn>$(NoWarn);CA1416;CA2255</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="$(OutputPath)\runtimes\**\*">
+      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <Target Name="FlattenRuntimeDependencies" AfterTargets="Build">
+    <ItemGroup>
+      <RuntimeFiles Include="$(OutputPath)\runtimes\**\*.dll" />
+    </ItemGroup>
+    <Copy SourceFiles="@(RuntimeFiles)" DestinationFolder="$(OutputPath)" />
+    <RemoveDir Directories="$(OutputPath)\runtimes" />
+  </Target>
+
+  <!-- Mod info -->
+  <PropertyGroup>
+    <ModName>Algernons Terrain Sampler</ModName>
+    <GameVersion>1.22.0</GameVersion>
+    <ModVersion>1.2.1</ModVersion>
+    <ModId>algernonsterrainsampler</ModId>
+    <Description>Provides terrain height sampling at any world coordinate without full chunk generation.</Description>
+    <Side>Universal</Side>
+    <RequiredOnClient>true</RequiredOnClient>
+    <RequiredOnServer>true</RequiredOnServer>
+  </PropertyGroup>
+
+  <!-- Authors -->
+  <ItemGroup>
+    <ModInfoAuthors Include="Algernon" />
+  </ItemGroup>
+
+  <!-- Dependencies -->
+  <ItemGroup>
+    <Dependencies Include="game">
+      <Version>$(GameVersion)</Version>
+    </Dependencies>
+  </ItemGroup>
+
+  <!-- Paths -->
+  <PropertyGroup>
+    <ProjectDir>$(MSBuildProjectDirectory)</ProjectDir>
+    <OutputDir>bin\$(Configuration)\Mods</OutputDir>
+    <OutputPath>$(OutputDir)\$(ModId)</OutputPath>
+    <!-- GameDirectory is set in Directory.Build.props -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Pinned to 8.x to match the assembly version Vintage Story already has loaded. -->
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.1" />
+  </ItemGroup>
+
+  <Target Name="CreateIgnoreFile" AfterTargets="ModInfo">
+    <WriteLinesToFile File="$(OutputPath)/.ignore" Lines="!Microsoft.Extensions.*.dll" Overwrite="true" />
+  </Target>
+
+  <!-- References to libraries that are being used in project -->
+  <ItemGroup>
+    <!-- Vintage Story dependencies: wont be copied into output directory -->
+    <Reference Include="VintagestoryAPI">
+      <HintPath>$(GameDirectory)/VintagestoryAPI.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="VintagestoryLib">
+      <HintPath>$(GameDirectory)/VintagestoryLib.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="VSSurvivalMod">
+      <HintPath>$(GameDirectory)/Mods/VSSurvivalMod.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="VSEssentials">
+      <HintPath>$(GameDirectory)/Mods/VSEssentials.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>$(GameDirectory)/Lib/Newtonsoft.Json.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+
+  <!-- Creates/updates modinfo.json file in build directory -->
+  <Target Name="ModInfo" AfterTargets="Build">
+    <PropertyGroup>
+      <ModInfo>
+        {
+        "type": "code",
+        "name": "$(ModName)",
+        "modid": "$(ModId)",
+        "version": "$(ModVersion)",
+
+        "description": "$(Description)",
+        "authors": [ @(ModInfoAuthors->'"%(Identity)"', ', ') ],
+
+        "dependencies": {
+        @(Dependencies->'"%(Identity)": "%(Version)"', ', ')
+        },
+
+        "side" : "$(Side)",
+        "requiredOnClient": $(RequiredOnClient),
+        "requiredOnServer": $(RequiredOnServer)
+        }
+      </ModInfo>
+    </PropertyGroup>
+    <WriteLinesToFile File="$(OutputPath)/modinfo.json" Lines="$(ModInfo)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+  </Target>
+
+</Project>

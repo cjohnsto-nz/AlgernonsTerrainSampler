@@ -1,0 +1,16 @@
+{
+  "type": "code",
+  "modid": "algernonsterrainsampler",
+  "name": "Algernons Terrain Sampler",
+  "authors": [
+    "Algernon"
+  ],
+  "description": "Provides terrain height sampling at any world coordinate without full chunk generation.",
+  "version": "1.2.2",
+  "dependencies": {
+    "game": "1.22.0"
+  },
+  "Side": "Universal",
+  "RequiredOnClient": true,
+  "RequiredOnServer": true
+}
